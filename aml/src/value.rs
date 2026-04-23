@@ -286,7 +286,7 @@ impl AmlValue {
                 let bytes = bytes.lock();
                 let bytes = if bytes.len() > 8 { &bytes[0..8] } else { &bytes[..] };
 
-                Ok(bytes.iter().rev().fold(0: u64, |mut i, &popped| {
+                Ok(bytes.iter().rev().fold(0u64, |mut i, &popped| {
                     i <<= 8;
                     i += popped as u64;
                     i
@@ -517,7 +517,7 @@ impl AmlValue {
             let bitslice = inner_data.view_bits::<bitvec::order::Lsb0>();
             let bits = &bitslice[offset..(offset + length)];
             if length > 64 {
-                Ok(AmlValue::Buffer(Arc::new(spinning_top::Spinlock::new(bits.as_raw_slice().to_vec()))))
+                Ok(AmlValue::Buffer(Arc::new(spinning_top::Spinlock::new(bits.to_bitvec().into_vec()))))
             } else {
                 let mut value = 0u64;
                 value.view_bits_mut::<bitvec::order::Lsb0>()[0..length].clone_from_bitslice(bits);
@@ -549,7 +549,7 @@ impl AmlValue {
                     bitslice[offset..(offset + bits_to_copy)]
                         .copy_from_bitslice(&value.to_le_bytes().view_bits()[..(bits_to_copy as usize)]);
                     // Zero extend to the end of the buffer field
-                    bitslice[(offset + bits_to_copy)..(offset + length)].set_all(false);
+                    bitslice[(offset + bits_to_copy)..(offset + length)].fill(false);
                     Ok(())
                 }
                 AmlValue::Boolean(value) => {
@@ -569,7 +569,7 @@ impl AmlValue {
                     bitslice[offset..(offset + bits_to_copy)]
                         .copy_from_bitslice(&value_data.view_bits()[..(bits_to_copy as usize)]);
                     // Zero extend to the end of the buffer field
-                    bitslice[(offset + bits_to_copy)..(offset + length)].set_all(false);
+                    bitslice[(offset + bits_to_copy)..(offset + length)].fill(false);
                     Ok(())
                 }
                 _ => Err(AmlError::TypeCannotBeWrittenToBufferField(value.type_of())),
